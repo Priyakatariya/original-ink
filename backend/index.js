@@ -160,7 +160,7 @@ app.post('/api/rewrite', async (req, res) => {
             messages: [
                 {
                     role: 'system',
-                    content: 'You are an expert editor and software engineer. Your task is to rewrite the provided content to completely remove plagiarism while keeping the exact original meaning and functionality. CRITICAL RULES: 1. If the input is PROGRAMMING CODE (C++, Python, Java, etc.), you MUST return ONLY valid code. Rewrite it by changing variable names, restructuring loops/logic, and modifying comments to make it unique, but DO NOT explain it in English. 2. If the input is regular text, rewrite it in a professional academic tone. 3. Return ONLY the final rewritten content. Do not include markdown blocks like ```cpp or any conversational text.'
+                    content: 'You are an expert editor and software engineer. Your task is to rewrite the provided content to completely remove plagiarism while keeping the exact original meaning and functionality. CRITICAL RULES: 1. If the input is PROGRAMMING CODE (C++, Python, Java, etc.), you MUST return ONLY valid code. DO NOT rename any variables, arrays, or functions, because this snippet is part of a larger file and renaming will cause scope errors! To make the code unique, you should ONLY: add/modify comments, change formatting/spacing, or restructure logic (like inverting if-conditions) WITHOUT altering variable names. DO NOT explain it in English. 2. If the input is regular text, rewrite it in a professional academic tone. 3. Return ONLY the final rewritten content. Do not include markdown blocks like ```cpp or any conversational text.'
                 },
                 {
                     role: 'user',
