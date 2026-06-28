@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 
 function App() {
   const [text, setText] = useState('');
-  const [fixedText, setFixedText] = useState(''); // To track the new fixed version separately
+  const [fixedText, setFixedText] = useState(''); 
   const [isChecking, setIsChecking] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isRewritingAll, setIsRewritingAll] = useState(false);
@@ -19,6 +19,13 @@ function App() {
     if (ref.current) {
       ref.current.scrollTop = e.target.scrollTop;
     }
+  };
+
+  const handleClear = () => {
+    setText('');
+    setFixedText('');
+    setResults(null);
+    setRewritingIndex(null);
   };
 
   const handleFileUpload = async (event) => {
@@ -56,7 +63,7 @@ function App() {
     if (!text) return;
     setIsChecking(true);
     setResults(null);
-    setFixedText(text); // Initialize fixed text as original text
+    setFixedText(text); 
     try {
       const response = await fetch(`${API_BASE_URL}/api/check-plagiarism`, {
         method: 'POST',
@@ -110,8 +117,18 @@ function App() {
       setFixedText(prevText => {
          if (prevText.includes(plagiarizedText)) {
             return prevText.replace(plagiarizedText, data.rewritten);
+         } else {
+            // Robust fallback matching for whitespace/newline differences
+            try {
+              const escaped = plagiarizedText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+              const regexPattern = escaped.split(/\s+/).join('\\s+');
+              const regex = new RegExp(regexPattern);
+              return prevText.replace(regex, data.rewritten);
+            } catch(e) {
+              console.error("Regex replace failed", e);
+              return prevText;
+            }
          }
-         return prevText;
       });
 
       return newResults;
@@ -169,6 +186,7 @@ function App() {
         if (part.isPlagiarized || part.isFixed) {
           newParts.push(part);
         } else {
+          // Find index instead of split to be slightly safer if multiple matches
           const splitText = part.text.split(searchStr);
           splitText.forEach((sub, i) => {
             if (sub) newParts.push({ text: sub, isPlagiarized: false, isFixed: false });
@@ -204,11 +222,20 @@ function App() {
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100 p-6 lg:p-8 font-sans">
       <div className="max-w-[1600px] mx-auto">
-        <header className="mb-8 text-center flex flex-col items-center">
+        <header className="mb-8 text-center flex flex-col items-center relative">
           <h1 className="text-4xl lg:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400 mb-2 drop-shadow-sm">
             OriginalInk
           </h1>
           <p className="text-slate-400 text-base lg:text-lg">AI-Powered Plagiarism Checker & Side-by-Side Editor</p>
+          
+          {text && (
+            <button 
+              onClick={handleClear}
+              className="absolute right-0 top-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 font-semibold py-2 px-4 rounded-lg transition-all border border-red-500/20 flex items-center gap-2"
+            >
+              🗑️ Clear
+            </button>
+          )}
         </header>
 
         {/* Top Controls */}
@@ -309,7 +336,7 @@ function App() {
                 <textarea
                   className="absolute inset-0 w-full h-full bg-transparent text-emerald-50 p-5 outline-none resize-none font-mono text-sm leading-relaxed whitespace-pre-wrap break-words custom-scrollbar"
                   value={fixedText}
-                  readOnly
+                  onChange={(e) => setFixedText(e.target.value)} // Allow manual edits to final version
                   onScroll={(e) => handleScroll(e, fixedHighlightRef)}
                 />
               </div>
