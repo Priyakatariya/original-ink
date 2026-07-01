@@ -173,6 +173,7 @@ function App() {
           rewritten: "Fixed in full document rewrite" 
         }));
         newResults.overall_plagiarism = 0;
+        newResults.ai_content = 0;
         newResults.originality = 100;
         setResults(newResults);
       } else {
@@ -260,7 +261,7 @@ function App() {
           <h1 className="text-5xl lg:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400 mb-2 pb-2">
             OriginalInk
           </h1>
-          <p className="text-slate-400 text-sm lg:text-lg px-4">AI-Powered Plagiarism Checker & Side-by-Side Editor</p>
+          <p className="text-slate-400 text-sm lg:text-lg px-4">AI-Powered Plagiarism & AI Detection Checker with Editor</p>
         </header>
 
         {/* Top Controls */}
@@ -270,7 +271,7 @@ function App() {
              disabled={isChecking || !text}
              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:opacity-50 text-white font-bold py-2.5 px-6 lg:py-3 lg:px-8 rounded-xl shadow-lg transition-all text-sm lg:text-base"
            >
-             {isChecking ? 'Scanning...' : 'Check Plagiarism'}
+             {isChecking ? 'Scanning...' : 'Check Plagiarism & AI'}
            </button>
            
            <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept=".pdf,.docx,.txt" className="hidden" />
@@ -308,14 +309,19 @@ function App() {
           
           {/* ORIGINAL TEXT SECTION */}
           <div className="bg-slate-800/80 backdrop-blur-sm p-4 lg:p-6 rounded-2xl lg:rounded-3xl shadow-2xl border border-slate-700/50 flex flex-col h-[400px] lg:h-full lg:min-h-[600px]">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
+            <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-4 gap-2">
                <div>
                  <h2 className="text-lg lg:text-xl font-semibold text-white">Original Document</h2>
                </div>
                {results && (
-                  <div className="flex items-center gap-2 bg-red-500/10 px-3 py-1.5 rounded-lg border border-red-500/20">
-                     <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-                     <p className="text-xs lg:text-sm font-bold text-red-400">Plagiarism: {results.overall_plagiarism}%</p>
+                  <div className="flex flex-wrap items-center gap-2">
+                     <div className="flex items-center gap-1.5 bg-red-500/10 px-2 lg:px-3 py-1.5 rounded-lg border border-red-500/20">
+                        <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                        <p className="text-[10px] lg:text-xs font-bold text-red-400">Plagiarism: {results.overall_plagiarism}%</p>
+                     </div>
+                     <div className="flex items-center gap-1.5 bg-orange-500/10 px-2 lg:px-3 py-1.5 rounded-lg border border-orange-500/20">
+                        <span className="text-[10px] lg:text-xs font-bold text-orange-400">🤖 AI Content: {results.ai_content || 0}%</span>
+                     </div>
                   </div>
                )}
             </div>
