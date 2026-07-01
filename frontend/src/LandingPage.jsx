@@ -188,32 +188,50 @@ const LandingPage = () => {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-24 bg-[#05080f] relative overflow-hidden">
-        <div className="absolute top-0 w-full h-px bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent"></div>
+      <section id="features" className="py-24 bg-[#03050a] relative overflow-hidden">
+        <div className="absolute top-0 w-full h-px bg-gradient-to-r from-transparent via-indigo-500/30 to-transparent"></div>
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center max-w-3xl mx-auto mb-20">
-            <h2 className="text-4xl lg:text-5xl font-black mb-6 text-white tracking-tight">Why Plagiarism Check?</h2>
-            <p className="text-slate-400 text-lg font-medium leading-relaxed">
+            <motion.h2 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-4xl lg:text-5xl font-black mb-6 text-white tracking-tight"
+            >
+              Why Plagiarism Check?
+            </motion.h2>
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className="text-slate-400 text-lg font-medium leading-relaxed"
+            >
               Even accidental plagiarism can affect grades, publication acceptance, and reputation. A reliable report helps you revise confidently before final submission.
-            </p>
+            </motion.p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
             {[
-              { icon: ShieldCheck, color: "text-emerald-400", bg: "bg-emerald-500/10", title: "100% Confidential", desc: "Your document is handled securely in-memory and deleted immediately after delivery. No repository submission." },
-              { icon: Clock, color: "text-blue-400", bg: "bg-blue-500/10", title: "Fast Delivery", desc: "Most reports are generated and shared quickly within 30 minutes, perfect for urgent last-minute submissions." },
-              { icon: Search, color: "text-purple-400", bg: "bg-purple-500/10", title: "Detailed Analysis", desc: "Get highlighted similarity sources, AI content percentages, and actionable AI-powered improvement insights." }
+              { icon: ShieldCheck, color: "text-emerald-400", bg: "bg-emerald-500/10", glow: "hover:shadow-[0_0_40px_rgba(16,185,129,0.15)]", border: "hover:border-emerald-500/30", title: "100% Confidential", desc: "Your document is handled securely in-memory and deleted immediately after delivery. No repository submission." },
+              { icon: Clock, color: "text-blue-400", bg: "bg-blue-500/10", glow: "hover:shadow-[0_0_40px_rgba(59,130,246,0.15)]", border: "hover:border-blue-500/30", title: "Fast Delivery", desc: "Most reports are generated and shared quickly within 30 minutes, perfect for urgent last-minute submissions." },
+              { icon: Search, color: "text-purple-400", bg: "bg-purple-500/10", glow: "hover:shadow-[0_0_40px_rgba(168,85,247,0.15)]", border: "hover:border-purple-500/30", title: "Detailed Analysis", desc: "Get highlighted similarity sources, AI content percentages, and actionable AI-powered improvement insights." }
             ].map((feature, i) => (
               <motion.div 
                 key={i}
-                whileHover={{ y: -10 }}
-                className="bg-white/[0.03] backdrop-blur-sm p-8 rounded-[2rem] border border-white/5 hover:border-white/10 transition-all group"
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.15, duration: 0.7, type: "spring", bounce: 0.3 }}
+                whileHover={{ y: -12, scale: 1.02 }}
+                className={`bg-[#0a0f1c]/60 backdrop-blur-xl p-8 rounded-[2rem] border border-white/5 transition-all duration-300 group ${feature.glow} ${feature.border} relative overflow-hidden`}
               >
-                <div className={`w-16 h-16 rounded-2xl ${feature.bg} flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-300`}>
+                <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <div className={`relative w-16 h-16 rounded-2xl ${feature.bg} flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-500 ease-out`}>
                   <feature.icon className={`w-8 h-8 ${feature.color}`} />
                 </div>
-                <h3 className="text-2xl font-bold mb-4 text-white tracking-tight">{feature.title}</h3>
-                <p className="text-slate-400 leading-relaxed font-medium">{feature.desc}</p>
+                <h3 className="relative text-2xl font-bold mb-4 text-white tracking-tight">{feature.title}</h3>
+                <p className="relative text-slate-400 leading-relaxed font-medium">{feature.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -224,12 +242,19 @@ const LandingPage = () => {
       <section id="how-it-works" className="py-24 bg-[#0a0f1c] relative">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-20">
-            <h2 className="text-4xl lg:text-5xl font-black mb-6 text-white tracking-tight">Easiest 4-Step Process</h2>
+            <motion.h2 
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, type: "spring" }}
+              className="text-4xl lg:text-5xl font-black mb-6 text-white tracking-tight"
+            >
+              Easiest 4-Step Process
+            </motion.h2>
             <p className="text-slate-400 text-lg font-medium">Fast, straightforward, and designed to save your time.</p>
           </div>
 
           <div className="grid md:grid-cols-4 gap-12 relative">
-            {/* Connecting Line */}
             <div className="hidden md:block absolute top-12 left-0 w-full h-[2px] bg-gradient-to-r from-indigo-500/20 via-purple-500/20 to-pink-500/20"></div>
             
             {[
@@ -240,16 +265,17 @@ const LandingPage = () => {
             ].map((step, idx) => (
               <motion.div 
                 key={idx} 
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: idx * 0.1 }}
-                className="relative group pt-4"
+                transition={{ delay: idx * 0.15, type: "spring", stiffness: 200, damping: 20 }}
+                whileHover={{ scale: 1.05 }}
+                className="relative group pt-4 cursor-default"
               >
-                <div className="w-16 h-16 rounded-2xl bg-[#0a0f1c] border-2 border-indigo-500/30 flex items-center justify-center text-2xl font-black text-indigo-400 mb-6 relative z-10 group-hover:border-indigo-400 group-hover:bg-indigo-500/10 transition-all shadow-[0_0_15px_rgba(99,102,241,0.2)]">
+                <div className="w-16 h-16 rounded-2xl bg-[#0a0f1c] border-2 border-indigo-500/20 flex items-center justify-center text-2xl font-black text-indigo-400 mb-6 relative z-10 group-hover:border-indigo-400 group-hover:bg-indigo-500/20 transition-all duration-300 shadow-[0_0_0_rgba(99,102,241,0)] group-hover:shadow-[0_0_25px_rgba(99,102,241,0.4)]">
                   {step.num}
                 </div>
-                <h4 className="text-xl font-bold mb-3 text-white tracking-tight">{step.title}</h4>
+                <h4 className="text-xl font-bold mb-3 text-white tracking-tight group-hover:text-indigo-300 transition-colors">{step.title}</h4>
                 <p className="text-slate-400 text-sm leading-relaxed font-medium">{step.desc}</p>
               </motion.div>
             ))}
@@ -258,11 +284,16 @@ const LandingPage = () => {
       </section>
 
       {/* Cost Calculator Section */}
-      <section id="pricing" className="py-24 bg-[#05080f] border-y border-white/5 relative overflow-hidden">
+      <section id="pricing" className="py-24 bg-[#03050a] border-y border-white/5 relative overflow-hidden">
         <div className="absolute top-1/2 left-0 w-[500px] h-[500px] bg-emerald-600/10 blur-[150px] rounded-full pointer-events-none"></div>
         
         <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-2 gap-16 items-center relative z-10">
-          <div>
+          <motion.div
+            initial={{ opacity: 0, x: -50 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7, type: "spring" }}
+          >
             <h2 className="text-4xl lg:text-6xl font-black mb-6 text-white tracking-tight">Transparent Pricing</h2>
             <p className="text-slate-400 text-lg mb-10 leading-relaxed font-medium">
               Instantly estimate your plagiarism checking cost with complete pricing transparency, secure processing, and no hidden charges.
@@ -274,7 +305,7 @@ const LandingPage = () => {
                 "Fast report generation"
               ].map((item, i) => (
                 <li key={i} className="flex items-center gap-4">
-                  <div className="p-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                  <div className="p-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.2)]">
                     <CheckSquare className="w-5 h-5 text-emerald-400" />
                   </div>
                   {item}
@@ -282,78 +313,84 @@ const LandingPage = () => {
               ))}
             </ul>
             <div className="mt-16 flex gap-12">
-              <div>
-                <p className="text-5xl font-black text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]">25K+</p>
+              <motion.div whileHover={{ scale: 1.05 }} className="cursor-default">
+                <p className="text-5xl font-black text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.4)]">25K+</p>
                 <p className="text-slate-400 text-sm font-semibold mt-2 tracking-wide uppercase">Reports Generated</p>
-              </div>
-              <div>
-                <p className="text-5xl font-black text-emerald-400 drop-shadow-[0_0_15px_rgba(52,211,153,0.4)]">99%</p>
+              </motion.div>
+              <motion.div whileHover={{ scale: 1.05 }} className="cursor-default">
+                <p className="text-5xl font-black text-emerald-400 drop-shadow-[0_0_20px_rgba(52,211,153,0.5)]">99%</p>
                 <p className="text-slate-400 text-sm font-semibold mt-2 tracking-wide uppercase">Confidential</p>
-              </div>
+              </motion.div>
             </div>
-          </div>
+          </motion.div>
           
           <motion.div 
-            whileHover={{ y: -5 }}
-            className="bg-[#0a0f1c]/80 backdrop-blur-xl border border-white/10 p-10 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7, type: "spring", bounce: 0.4 }}
+            whileHover={{ y: -8, scale: 1.01 }}
+            className="bg-[#0a0f1c]/80 backdrop-blur-2xl border border-white/10 hover:border-emerald-500/30 p-10 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] hover:shadow-[0_0_50px_rgba(16,185,129,0.15)] transition-all duration-500 relative overflow-hidden group"
           >
-            <div className="flex items-center gap-4 mb-10">
-              <div className="p-3 bg-indigo-500/10 rounded-xl border border-indigo-500/20">
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <div className="relative z-10 flex items-center gap-4 mb-10">
+              <div className="p-3 bg-indigo-500/10 rounded-2xl border border-indigo-500/30 shadow-[0_0_15px_rgba(99,102,241,0.2)]">
                 <Settings className="w-6 h-6 text-indigo-400 animate-spin-slow" />
               </div>
-              <h3 className="text-2xl font-bold text-white tracking-tight">Pricing Estimator</h3>
+              <h3 className="text-3xl font-bold text-white tracking-tight">Pricing Estimator</h3>
             </div>
             
-            <div className="space-y-8">
+            <div className="space-y-8 relative z-10">
               <div>
-                <label className="block text-sm font-semibold text-slate-400 mb-3">Select Service</label>
-                <div className="relative">
-                  <select className="w-full appearance-none bg-[#1f2937]/50 border border-white/10 rounded-xl px-5 py-4 text-white outline-none focus:border-indigo-500 transition-all font-medium">
+                <label className="block text-sm font-bold text-slate-400 mb-3 uppercase tracking-wider">Select Service</label>
+                <div className="relative group/select">
+                  <select className="w-full appearance-none bg-[#1f2937]/50 border border-white/10 rounded-2xl px-5 py-4 text-white outline-none focus:border-indigo-500 focus:bg-[#1f2937] transition-all font-semibold shadow-inner group-hover/select:border-white/20">
                     <option>Plagiarism & AI Report</option>
                     <option>AI Reduction Suite</option>
                   </select>
-                  <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
+                  <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none group-hover/select:text-white transition-colors" />
                 </div>
               </div>
               
               <div>
-                <label className="block text-sm font-semibold text-slate-400 mb-3">Page Range</label>
-                <div className="relative">
+                <label className="block text-sm font-bold text-slate-400 mb-3 uppercase tracking-wider">Page Range</label>
+                <div className="relative group/select">
                   <select 
                     value={pages}
                     onChange={(e) => setPages(e.target.value)}
-                    className="w-full appearance-none bg-[#1f2937]/50 border border-white/10 rounded-xl px-5 py-4 text-white outline-none focus:border-emerald-500 transition-all font-medium"
+                    className="w-full appearance-none bg-[#1f2937]/50 border border-white/10 rounded-2xl px-5 py-4 text-white outline-none focus:border-emerald-500 focus:bg-[#1f2937] transition-all font-semibold shadow-inner group-hover/select:border-white/20"
                   >
                     {Object.keys(pricingMap).map(range => (
                       <option key={range} value={range}>{range} Pages</option>
                     ))}
                   </select>
-                  <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
+                  <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none group-hover/select:text-white transition-colors" />
                 </div>
               </div>
 
               <div className="pt-8 border-t border-white/10 flex justify-between items-end">
                 <div>
-                  <p className="text-slate-400 text-sm mb-2 font-semibold uppercase tracking-wider">Estimated Cost</p>
+                  <p className="text-slate-400 text-sm mb-2 font-bold uppercase tracking-wider">Estimated Cost</p>
                   <motion.p 
                     key={pages}
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="text-5xl font-black text-white"
+                    initial={{ opacity: 0, scale: 0.8, y: 10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                    className="text-6xl font-black text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]"
                   >
                     ₹{pricingMap[pages]}.00
                   </motion.p>
                 </div>
                 <motion.button 
-                  whileHover={{ scale: 1.05 }}
+                  whileHover={{ scale: 1.05, y: -2 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={handleStartCheck}
-                  className="bg-emerald-500 hover:bg-emerald-400 text-white px-8 py-4 rounded-xl font-bold transition-all shadow-[0_0_20px_rgba(16,185,129,0.3)] tracking-wide"
+                  className="bg-emerald-500 hover:bg-emerald-400 text-white px-8 py-4 rounded-2xl font-bold transition-all shadow-[0_10px_30px_rgba(16,185,129,0.4)] hover:shadow-[0_15px_40px_rgba(16,185,129,0.6)] tracking-wide"
                 >
                   Start Check
                 </motion.button>
               </div>
-              <p className="text-slate-500 text-xs text-center font-medium">
+              <p className="text-slate-500 text-xs text-center font-medium pt-2">
                 Final pricing depends on selected service type and total document pages analyzed.
               </p>
             </div>
