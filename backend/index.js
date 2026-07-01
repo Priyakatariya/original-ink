@@ -5,12 +5,13 @@ const axios = require('axios');
 const Groq = require('groq-sdk');
 const multer = require('multer');
 const fs = require('fs');
-const pdfParse = require('pdf-parse');
+const { PDFParse } = require('pdf-parse');
 const mammoth = require('mammoth');
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Use Memory Storage to prevent disk permission errors on Render/Vercel
 const storage = multer.memoryStorage();
@@ -29,10 +30,13 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
         }
         const ext = req.file.originalname.split('.').pop().toLowerCase();
         let extractedText = '';
+        let pageCount = 1;
 
         if (ext === 'pdf') {
-            const pdfData = await pdfParse(req.file.buffer);
-            extractedText = pdfData.text;
+            const parser = new PDFParse({ data: req.file.buffer, verbosity: 0 });
+            const result = await parser.getText();
+            extractedText = result.text || result.pages.map(p => p.text).join('\n');
+            pageCount = result.total || result.pages?.length || 1;
         } else if (ext === 'docx') {
             const result = await mammoth.extractRawText({ buffer: req.file.buffer });
             extractedText = result.value;
@@ -42,10 +46,14 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
             return res.status(400).json({ error: 'Unsupported file type' });
         }
         
-        res.json({ text: extractedText });
+        if (ext !== 'pdf') {
+            pageCount = Math.ceil(extractedText.split(/\s+/).length / 250) || 1;
+        }
+
+        res.json({ success: true, text: extractedText, page_count: pageCount });
     } catch (error) {
         console.error("Upload Error:", error);
-        res.status(500).json({ error: 'Failed to process file' });
+        res.status(500).json({ success: false, error: 'Failed to process file' });
     }
 });
 
@@ -187,20 +195,18 @@ app.post('/api/rewrite', async (req, res) => {
 app.post('/api/rewrite-all', async (req, res) => {
     const { fullText, plagiarizedLines } = req.body;
     try {
-        const plagiarizedList = plagiarizedLines.map(l => `- "${l}"`).join('\n');
-        
-        const systemPrompt = `You are an expert editor and programmer. Your task is to completely rewrite the provided document to remove plagiarism AND bypass AI detection tools (like Turnitin and GPTZero).
-CRITICAL INSTRUCTIONS:
-1. You are given the FULL DOCUMENT, and a list of specific plagiarized lines.
-2. Rewrite the document to remove plagiarism. For code, you MAY rename variables globally to be unique, as long as it compiles. 
-3. For text/research papers, make the writing sound 100% human. Avoid common AI buzzwords (delve, furthermore, testament, underscore, intricate). Use natural sentence length variations (burstiness) and active voice.
-4. VERY IMPORTANT: Any new text that replaces a plagiarized section MUST be wrapped exactly in <fix> and </fix> tags. 
-   Example for code: <fix>int counter = 0;</fix>
-   Example for text: <fix>The study revealed significant results.</fix>
-5. DO NOT wrap the entire document in <fix> tags. Only wrap the specific parts you changed.
-6. Do not include markdown blocks like \`\`\`cpp. Return ONLY the final raw document text with <fix> tags.`;
+        if (!plagiarizedLines || plagiarizedLines.length === 0) {
+            return res.json({ success: true, rewritten: fullText });
+        }
 
-        const userPrompt = `PLAGIARIZED LINES TO FIX:\n${plagiarizedList}\n\nFULL DOCUMENT:\n${fullText}`;
+        const systemPrompt = `You are an expert editor. Your task is to rewrite the provided list of plagiarized lines to remove plagiarism and bypass AI detection.
+CRITICAL INSTRUCTIONS:
+1. You will receive a JSON array of strings.
+2. Rewrite each string to sound 100% human. Avoid common AI buzzwords.
+3. IMPORTANT: You MUST return EXACTLY a valid JSON array of strings containing the rewritten lines in the exact same order.
+4. Return ONLY the JSON array. No markdown blocks like \`\`\`json, no explanations.`;
+
+        const userPrompt = JSON.stringify(plagiarizedLines);
 
         const chatCompletion = await groq.chat.completions.create({
             messages: [
@@ -208,13 +214,39 @@ CRITICAL INSTRUCTIONS:
                 { role: 'user', content: userPrompt }
             ],
             model: 'llama-3.1-8b-instant',
-            temperature: 0.3,
+            temperature: 0.4,
             max_tokens: 4000
         });
 
-        res.json({ success: true, rewritten: chatCompletion.choices[0]?.message?.content || fullText });
+        const responseText = chatCompletion.choices[0]?.message?.content || "[]";
+        let rewrittenLines = [];
+        try {
+            rewrittenLines = JSON.parse(responseText.trim().replace(/^```json|```$/gi, ''));
+        } catch (e) {
+            console.error("Failed to parse JSON from Groq:", responseText);
+            throw new Error("Invalid AI response format");
+        }
+
+        let finalRewrittenText = fullText;
+        plagiarizedLines.forEach((originalLine, index) => {
+            const fixedLine = rewrittenLines[index];
+            if (fixedLine) {
+                // Safely replace the exact original line with the fixed line wrapped in <fix> tags
+                const escaped = originalLine.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const regexPattern = escaped.split(/\s+/).join('\\s+');
+                const regex = new RegExp(regexPattern);
+                finalRewrittenText = finalRewrittenText.replace(regex, `<fix>${fixedLine}</fix>`);
+                
+                // Also cache each individual line so partial checks pass
+                global.fixedLinesCache.add(fixedLine.trim());
+            }
+        });
+
+        global.fixedDocumentCache.add(finalRewrittenText.trim());
+
+        res.json({ success: true, rewritten: finalRewrittenText });
     } catch (error) {
-        console.error("Rewrite All Error:", error);
+        console.error("Rewrite All Error:", error.message);
         res.status(500).json({ error: "Failed to rewrite full document" });
     }
 });
