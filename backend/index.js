@@ -12,8 +12,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const upload = multer({ dest: 'uploads/' });
+// Use Memory Storage to prevent disk permission errors on Render/Vercel
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
 
+// Initialize Groq Client
 const groq = new Groq({
     apiKey: process.env.GROQ_API_KEY
 });
@@ -24,36 +27,22 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
         if (!req.file) {
             return res.status(400).json({ error: 'No file uploaded' });
         }
-
-        const filePath = req.file.path;
-        const mimeType = req.file.mimetype;
-        const originalName = req.file.originalname;
+        const ext = req.file.originalname.split('.').pop().toLowerCase();
         let extractedText = '';
 
-        if (mimeType === 'application/pdf') {
-            const dataBuffer = fs.readFileSync(filePath);
-            const data = await pdfParse(dataBuffer);
-            extractedText = data.text;
-        } else if (
-            mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || 
-            originalName.endsWith('.docx')
-        ) {
-            const result = await mammoth.extractRawText({ path: filePath });
+        if (ext === 'pdf') {
+            const pdfData = await pdfParse(req.file.buffer);
+            extractedText = pdfData.text;
+        } else if (ext === 'docx') {
+            const result = await mammoth.extractRawText({ buffer: req.file.buffer });
             extractedText = result.value;
-        } else if (mimeType === 'text/plain') {
-            extractedText = fs.readFileSync(filePath, 'utf8');
+        } else if (ext === 'txt') {
+            extractedText = req.file.buffer.toString('utf8');
         } else {
-            fs.unlinkSync(filePath);
-            return res.status(400).json({ error: 'Unsupported file format. Please upload PDF, DOCX, or TXT.' });
+            return res.status(400).json({ error: 'Unsupported file type' });
         }
-
-        // Clean up file
-        fs.unlinkSync(filePath);
-
-        res.json({
-            success: true,
-            text: extractedText.trim()
-        });
+        
+        res.json({ text: extractedText });
     } catch (error) {
         console.error("Upload Error:", error);
         res.status(500).json({ error: 'Failed to process file' });
@@ -181,6 +170,41 @@ app.post('/api/rewrite', async (req, res) => {
     } catch (error) {
         console.error("Rewrite Error:", error);
         res.status(500).json({ error: 'Failed to rewrite text' });
+    }
+});
+
+// Endpoint for full document rewrite
+app.post('/api/rewrite-all', async (req, res) => {
+    const { fullText, plagiarizedLines } = req.body;
+    try {
+        const plagiarizedList = plagiarizedLines.map(l => `- "${l}"`).join('\n');
+        
+        const systemPrompt = `You are an expert editor and programmer. Your task is to completely rewrite the provided document to remove plagiarism.
+CRITICAL INSTRUCTIONS:
+1. You are given the FULL DOCUMENT, and a list of specific plagiarized lines.
+2. Rewrite the document to remove plagiarism. For code, you MAY rename variables globally to be unique, as long as it compiles. For text, change the vocabulary/structure.
+3. VERY IMPORTANT: Any new text that replaces a plagiarized section MUST be wrapped exactly in <fix> and </fix> tags. 
+   Example for code: <fix>int counter = 0;</fix>
+   Example for text: <fix>The study revealed significant results.</fix>
+4. DO NOT wrap the entire document in <fix> tags. Only wrap the specific parts you changed.
+5. Do not include markdown blocks like \`\`\`cpp. Return ONLY the final raw document text with <fix> tags.`;
+
+        const userPrompt = `PLAGIARIZED LINES TO FIX:\n${plagiarizedList}\n\nFULL DOCUMENT:\n${fullText}`;
+
+        const chatCompletion = await groq.chat.completions.create({
+            messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: userPrompt }
+            ],
+            model: 'llama-3.1-8b-instant',
+            temperature: 0.3,
+            max_tokens: 4000
+        });
+
+        res.json({ success: true, rewritten: chatCompletion.choices[0]?.message?.content || fullText });
+    } catch (error) {
+        console.error("Rewrite All Error:", error);
+        res.status(500).json({ error: "Failed to rewrite full document" });
     }
 });
 
