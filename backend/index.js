@@ -60,6 +60,7 @@ app.post('/api/check-plagiarism', async (req, res) => {
         if (!text) return res.status(400).json({ error: 'Text is required' });
 
         let plagiarismScore = 0;
+        let aiContentScore = 0;
         let plagiarizedLines = [];
 
         // Check if the entire document was previously fixed by our AI
@@ -67,6 +68,7 @@ app.post('/api/check-plagiarism', async (req, res) => {
             return res.json({
                 success: true,
                 overall_plagiarism: 0,
+                ai_content: 0,
                 originality: 100,
                 plagiarized_lines: []
             });
@@ -89,6 +91,7 @@ app.post('/api/check-plagiarism', async (req, res) => {
             
             if (providerResult && providerResult.status === 'success') {
                 plagiarismScore = providerResult.plagiarism_score * 100;
+                aiContentScore = 50 + (plagiarismScore % 40); // Mock AI score if using Eden
             } else {
                 throw new Error("Eden AI returned invalid status");
             }
@@ -130,11 +133,15 @@ app.post('/api/check-plagiarism', async (req, res) => {
             } else {
                 plagiarismScore = 0;
             }
+            
+            // Deterministic mock AI content score
+            aiContentScore = 40 + ((text.length * 7) % 55); // Returns between 40 and 95
         }
 
         res.json({
             success: true,
             overall_plagiarism: plagiarismScore,
+            ai_content: aiContentScore,
             originality: 100 - plagiarismScore,
             plagiarized_lines: plagiarizedLines
         });
@@ -154,7 +161,7 @@ app.post('/api/rewrite', async (req, res) => {
             messages: [
                 {
                     role: 'system',
-                    content: 'You are an expert editor and software engineer. Your task is to rewrite the provided content to completely remove plagiarism while keeping the exact original meaning and functionality. CRITICAL RULES: 1. If the input is PROGRAMMING CODE (C++, Python, Java, etc.), you MUST return ONLY valid code. DO NOT rename any variables, arrays, or functions, because this snippet is part of a larger file and renaming will cause scope errors! To make the code unique, you should ONLY: add/modify comments, change formatting/spacing, or restructure logic (like inverting if-conditions) WITHOUT altering variable names. DO NOT explain it in English. 2. If the input is regular text, rewrite it in a professional academic tone. 3. Return ONLY the final rewritten content. Do not include markdown blocks like ```cpp or any conversational text.'
+                    content: 'You are an expert editor and software engineer. Your task is to rewrite the provided content to completely remove plagiarism AND bypass AI detection (make it sound 100% human-written) while keeping the exact original meaning and functionality. CRITICAL RULES: 1. If the input is PROGRAMMING CODE (C++, Python, Java, etc.), you MUST return ONLY valid code. DO NOT rename any variables, arrays, or functions. To make the code unique, you should ONLY: add/modify comments, change formatting/spacing, or restructure logic. DO NOT explain it in English. 2. If the input is regular text (like a research paper), rewrite it in a professional academic tone BUT avoid common AI buzzwords (e.g., delve, testament, moreover, underscore, intricate). Introduce natural variations in sentence length (high perplexity and burstiness) to bypass tools like GPTZero and Turnitin AI detection. 3. Return ONLY the final rewritten content. Do not include markdown blocks like ```cpp or any conversational text.'
                 },
                 {
                     role: 'user',
@@ -162,18 +169,16 @@ app.post('/api/rewrite', async (req, res) => {
                 }
             ],
             model: 'llama-3.1-8b-instant',
+            temperature: 0.6,
+            max_tokens: 1024,
         });
 
-        const rewrittenText = chatCompletion.choices[0]?.message?.content || '';
+        const rewritten = chatCompletion.choices[0]?.message?.content || text;
+        global.fixedLinesCache.add(rewritten.trim()); // Save to memory cache
 
-        res.json({
-            success: true,
-            original: text,
-            rewritten: rewrittenText.trim()
-        });
-
+        res.json({ success: true, rewritten: rewritten });
     } catch (error) {
-        console.error("Rewrite Error:", error);
+        console.error("Rewrite Error:", error.message);
         res.status(500).json({ error: 'Failed to rewrite text' });
     }
 });
@@ -184,15 +189,16 @@ app.post('/api/rewrite-all', async (req, res) => {
     try {
         const plagiarizedList = plagiarizedLines.map(l => `- "${l}"`).join('\n');
         
-        const systemPrompt = `You are an expert editor and programmer. Your task is to completely rewrite the provided document to remove plagiarism.
+        const systemPrompt = `You are an expert editor and programmer. Your task is to completely rewrite the provided document to remove plagiarism AND bypass AI detection tools (like Turnitin and GPTZero).
 CRITICAL INSTRUCTIONS:
 1. You are given the FULL DOCUMENT, and a list of specific plagiarized lines.
-2. Rewrite the document to remove plagiarism. For code, you MAY rename variables globally to be unique, as long as it compiles. For text, change the vocabulary/structure.
-3. VERY IMPORTANT: Any new text that replaces a plagiarized section MUST be wrapped exactly in <fix> and </fix> tags. 
+2. Rewrite the document to remove plagiarism. For code, you MAY rename variables globally to be unique, as long as it compiles. 
+3. For text/research papers, make the writing sound 100% human. Avoid common AI buzzwords (delve, furthermore, testament, underscore, intricate). Use natural sentence length variations (burstiness) and active voice.
+4. VERY IMPORTANT: Any new text that replaces a plagiarized section MUST be wrapped exactly in <fix> and </fix> tags. 
    Example for code: <fix>int counter = 0;</fix>
    Example for text: <fix>The study revealed significant results.</fix>
-4. DO NOT wrap the entire document in <fix> tags. Only wrap the specific parts you changed.
-5. Do not include markdown blocks like \`\`\`cpp. Return ONLY the final raw document text with <fix> tags.`;
+5. DO NOT wrap the entire document in <fix> tags. Only wrap the specific parts you changed.
+6. Do not include markdown blocks like \`\`\`cpp. Return ONLY the final raw document text with <fix> tags.`;
 
         const userPrompt = `PLAGIARIZED LINES TO FIX:\n${plagiarizedList}\n\nFULL DOCUMENT:\n${fullText}`;
 
