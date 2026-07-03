@@ -26,6 +26,7 @@ const LandingPage = () => {
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractionFailed, setExtractionFailed] = useState(false);
   const [isRewritingAll, setIsRewritingAll] = useState(false);
+  const [inputType, setInputType] = useState('file'); // 'file' or 'text'
   const [results, setResults] = useState(null);
   const [showResults, setShowResults] = useState(false);
   const [originalViewTab, setOriginalViewTab] = useState('text');
@@ -452,25 +453,55 @@ const LandingPage = () => {
             <div className="space-y-6 relative z-10">
               <div>
                 <label className="block text-sm font-semibold text-slate-400 mb-2">Upload File*</label>
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  onChange={handleFileChange} 
-                  accept=".pdf,.doc,.docx,.txt" 
-                  className="hidden" 
-                />
-                <motion.div 
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => fileInputRef.current?.click()}
-                  className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all ${selectedFile ? 'border-emerald-500/50 bg-emerald-500/10' : 'border-indigo-500/30 hover:border-indigo-400 bg-indigo-500/5 hover:bg-indigo-500/10'}`}
-                >
-                  {selectedFile ? <FileType className="w-12 h-12 text-emerald-400 mx-auto mb-3" /> : <UploadCloud className="w-12 h-12 text-indigo-400 mx-auto mb-3" />}
-                  <p className="text-white font-semibold">
-                    {selectedFile ? selectedFile.name : 'Click to upload your document'}
-                  </p>
-                  <p className="text-slate-400 text-sm mt-1 font-medium">PDF, DOC, DOCX supported (Max 50MB)</p>
-                </motion.div>
+                <div className="flex gap-4 mb-4">
+                  <button
+                    onClick={() => setInputType('file')}
+                    className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all ${inputType === 'file' ? 'bg-indigo-500 text-white shadow-lg' : 'bg-[#1f2937]/50 text-slate-400 hover:text-white'}`}
+                  >
+                    Upload Document
+                  </button>
+                  <button
+                    onClick={() => setInputType('text')}
+                    className={`flex-1 py-2 rounded-xl text-sm font-bold transition-all ${inputType === 'text' ? 'bg-indigo-500 text-white shadow-lg' : 'bg-[#1f2937]/50 text-slate-400 hover:text-white'}`}
+                  >
+                    Paste Text
+                  </button>
+                </div>
+
+                {inputType === 'file' ? (
+                  <>
+                    <input 
+                      type="file" 
+                      ref={fileInputRef} 
+                      onChange={handleFileChange} 
+                      accept=".pdf,.doc,.docx,.txt" 
+                      className="hidden" 
+                    />
+                    <motion.div 
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => fileInputRef.current?.click()}
+                      className={`border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all ${selectedFile ? 'border-emerald-500/50 bg-emerald-500/10' : 'border-indigo-500/30 hover:border-indigo-400 bg-indigo-500/5 hover:bg-indigo-500/10'}`}
+                    >
+                      {selectedFile ? <FileType className="w-12 h-12 text-emerald-400 mx-auto mb-3" /> : <UploadCloud className="w-12 h-12 text-indigo-400 mx-auto mb-3" />}
+                      <p className="text-white font-semibold">
+                        {selectedFile ? selectedFile.name : 'Click to upload your document'}
+                      </p>
+                      <p className="text-slate-400 text-sm mt-1 font-medium">PDF, DOC, DOCX supported (Max 50MB)</p>
+                    </motion.div>
+                  </>
+                ) : (
+                  <textarea
+                    value={text}
+                    onChange={(e) => {
+                      setText(e.target.value);
+                      setExtractionFailed(false);
+                      setDetectedPages(Math.max(1, Math.ceil(e.target.value.split(/\s+/).length / 250)));
+                    }}
+                    placeholder="Paste your document text here..."
+                    className="w-full h-40 bg-[#1f2937]/50 border border-indigo-500/30 rounded-2xl p-4 text-white placeholder:text-slate-500 outline-none focus:border-indigo-500 focus:bg-indigo-500/10 transition-all custom-scrollbar resize-none"
+                  />
+                )}
                 
                 {selectedFile && (
                   <motion.div 
@@ -578,7 +609,7 @@ const LandingPage = () => {
                 {/* ORIGINAL TEXT / PDF SECTION */}
                 <div className="bg-[#0a0f1c]/80 backdrop-blur-xl p-6 rounded-[2rem] shadow-2xl border border-white/10 flex flex-col h-[500px] xl:h-[700px]">
                   <div className="flex justify-between items-center mb-4">
-                     <div className="flex gap-2 bg-[#03050a] p-1 rounded-xl border border-white/5">
+                     <div className="flex gap-2 bg-[#03050a] p-1 rounded-xl border border-white/5 flex-wrap">
                        <button 
                          onClick={() => setOriginalViewTab('text')}
                          className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${originalViewTab === 'text' ? 'bg-indigo-500 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
@@ -591,6 +622,15 @@ const LandingPage = () => {
                            className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${originalViewTab === 'pdf' ? 'bg-indigo-500 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
                          >
                            View PDF
+                         </button>
+                       )}
+                       {originalViewTab === 'text' && (
+                         <button 
+                           onClick={() => processCheck(text)}
+                           disabled={isChecking}
+                           className="ml-2 px-4 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-400 hover:to-rose-400 text-white shadow-[0_0_15px_rgba(236,72,153,0.4)] disabled:opacity-50"
+                         >
+                           {isChecking ? 'Checking...' : 'Re-Check Text'}
                          </button>
                        )}
                      </div>
@@ -622,7 +662,7 @@ const LandingPage = () => {
                         <textarea
                           className="absolute inset-0 w-full h-full bg-transparent text-slate-300 p-5 outline-none resize-none font-mono text-sm leading-relaxed whitespace-pre-wrap break-words custom-scrollbar"
                           value={text}
-                          readOnly
+                          onChange={(e) => setText(e.target.value)}
                           onScroll={(e) => handleScroll(e, highlightRef)}
                         />
                       </>
